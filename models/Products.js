@@ -21,10 +21,10 @@ const Products = sequelize.define("Product", {
   },
   price: {
     type: DataTypes.FLOAT,
+    allowNull: false,
     validate: {
       isNumeric: true,
       min: { args: [0], msg: "Цена не может быть меньше 0" },
-      allowNull: false,
     },
   },
 });

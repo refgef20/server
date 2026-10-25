@@ -2,6 +2,11 @@ import sequelize from "../db.js";
 import { DataTypes } from "sequelize";
 
 const Appointment = sequelize.define("Appointment", {
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+  },
   clientName: { type: DataTypes.STRING, allowNull: false },
   clientPhone: { type: DataTypes.STRING, allowNull: false },
   date: { type: DataTypes.DATE, allowNull: false },

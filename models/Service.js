@@ -5,8 +5,8 @@ const Favors = sequelize.define("Service", {
   title: DataTypes.STRING,
   price: {
     type: DataTypes.FLOAT,
+    allowNull: false,
     validate: {
-      allowNull: false,
       min: 0,
     },
   },
@@ -16,8 +16,8 @@ const Favors = sequelize.define("Service", {
   },
   photo: {
     type: DataTypes.STRING,
+    allowNull: false,
     validate: {
-      allowNull: false,
       isUrl: true,
     },
   },

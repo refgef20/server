@@ -12,7 +12,7 @@ async function getProductsId(req, res) {
 }
 
 async function getProdustsQuery(req, res) {
-  const where = {};
+  let where = {};
 
   const {
     page = 1,
@@ -20,6 +20,7 @@ async function getProdustsQuery(req, res) {
     sortby = "id",
     sortOrder = "ASC",
     search = "",
+    category,
   } = req.query;
 
   if (search) {
@@ -27,6 +28,10 @@ async function getProdustsQuery(req, res) {
       { description: { [Op.iLike]: `%${search}%` } },
       { name: { [Op.iLike]: `%${search}%` } },
     ];
+  }
+
+  if (category) {
+    where.category = category;
   }
 
   const offs = (page - 1) * limit;
@@ -40,19 +45,18 @@ async function getProdustsQuery(req, res) {
 }
 
 async function postProduct(req, res) {
-  const newProd = await Products.create(JSON.parse(req.body));
+  const newProd = await Products.create(req.body);
   return res.status(201).json(newProd);
 }
 
-async function putProd(req, res) {
+async function patchProd(req, res) {
   const product = await Products.findByPk(req.params.id);
   const newProd = await product.update(req.body);
   return res.status(201).json(newProd);
 }
 
 async function deleteProd(req, res) {
-  const product = await Products.findByPk(req.params.id);
-  const newProd = await Products.destroy(product);
-  return (res.status(201), json(newProd));
+  const newProd = await Products.destroy({ where: { id: req.params.id } });
+  return res.status(201).json(newProd);
 }
-export { getProductsId, getProdustsQuery, postProduct, putProd, deleteProd };
+export { getProductsId, getProdustsQuery, postProduct, patchProd, deleteProd };
