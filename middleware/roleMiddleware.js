@@ -1,5 +1,8 @@
+import User from "../models/User.js";
+
 async function roleMiddleware(req, res, next) {
-  if (req.user.role !== "admin") {
+  const user = await User.findByPk(req.user.userId);
+  if (!user || user.role !== "admin") {
     return res.status(403).json({
       message: "Пользовател не имеет права совершать данное действие",
     });

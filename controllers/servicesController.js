@@ -33,8 +33,8 @@ async function getFavorsQuery(req, res) {
   const offset = (page - 1) * limit;
 
   const favir = await Favors.findAndCountAll({
-    limit: limit,
-    offset: offset,
+    limit: Number(limit),
+    offset: Number(offset),
     order: [[sortby, sortOrder]],
     where: where,
   });
@@ -47,20 +47,38 @@ async function getFavorsQuery(req, res) {
 }
 
 async function patchFavor(req, res) {
-  const fav = await Favors.update(req.body, { where: { id: req.params.id } });
-  if (fav) {
-    return res.json(fav);
-  } else {
-    return res.status(404).json({ messge: "Услуга не обновлена" });
+  try {
+    const fav = await Favors.update(req.body, { where: { id: req.params.id } });
+    if (fav[0] > 0) {
+      return res.json(fav);
+    } else {
+      return res.status(404).json({ message: "Услуга не найдена" });
+    }
+  } catch (err) {
+    if (err.name === "SequelizeValidationError") {
+      return res.status(400).json({
+        message: err.errors.map((error) => error.message).join(", "),
+      });
+    }
+    throw err;
   }
 }
 
 async function postFavor(req, res) {
-  const favor = await Favors.create(req.body);
-  if (favor) {
-    return res.json(favor);
-  } else {
-    return res.status(404).json({ messge: "Услуга не добавлена" });
+  try {
+    const favor = await Favors.create(req.body);
+    if (favor) {
+      return res.json(favor);
+    } else {
+      return res.status(404).json({ messge: "Услуга не добавлена" });
+    }
+  } catch (err) {
+    if (err.name === "SequelizeValidationError") {
+      return res.status(400).json({
+        message: err.errors.map((error) => error.message).join(", "),
+      });
+    }
+    throw err;
   }
 }
 

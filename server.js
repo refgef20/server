@@ -23,6 +23,7 @@ import routerO from "./routes/orderRouter.js";
 import routerA from "./routes/authRouter.js";
 import { Connection } from "./redis.js";
 import cookieParser from "cookie-parser";
+import routerAdmin from "./routes/adminRouter.js";
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use("/api/favourite", routerF);
 app.use("/api/cart", routerC);
 app.use("/api/order", routerO);
 app.use("/api/auth", routerA);
+app.use("/api/admin", routerAdmin);
 
 async function start() {
   try {

@@ -53,8 +53,17 @@ async function getProdustsQuery(req, res) {
 }
 
 async function postProduct(req, res) {
-  const newProd = await Products.create(req.body);
-  return res.status(201).json(newProd);
+  try {
+    const newProd = await Products.create(req.body);
+    return res.status(201).json(newProd);
+  } catch (err) {
+    if (err.name === "SequelizeValidationError") {
+      return res.status(400).json({
+        message: err.errors.map((error) => error.message).join(", "),
+      });
+    }
+    throw err;
+  }
 }
 
 async function patchProd(req, res) {
