@@ -16,7 +16,12 @@ const Products = sequelize.define("Product", {
     type: DataTypes.FLOAT,
     validate: {
       isNumeric: true,
-      min: { args: [0], msg: "Цена не может быть меньше 0" },
+      min: { args: [0], msg: "Рейтинг не может быть меньше 0" },
+      checkBigRating(value) {
+        if (value > 5) {
+          throw new Error("Такое значение рейтинга не существует");
+        }
+      },
     },
   },
   price: {
@@ -25,6 +30,11 @@ const Products = sequelize.define("Product", {
     validate: {
       isNumeric: true,
       min: { args: [0], msg: "Цена не может быть меньше 0" },
+      checkPriceBig(value) {
+        if (value > 1000000) {
+          throw new Error("Подозрительно огромная цена");
+        }
+      },
     },
   },
 });

@@ -18,11 +18,11 @@ async function getAppointmentQuery(req, res) {
     sortby = "id",
     sortOrder = "ASC",
     search = "",
-    clientName,
+    status,
   } = req.query;
 
-  if (clientName) {
-    where.clientName = { [Op.iLike]: `%${clientName}%` };
+  if (status) {
+    where.status = { [Op.iLike]: `%${status}%` };
   }
   if (search) {
     where[Op.or] = [
@@ -48,7 +48,9 @@ async function getAppointmentQuery(req, res) {
 
 async function deleteAppointment(req, res) {
   try {
-    const app = await Appointment.destroy({ where: { id: req.params.id } });
+    const app = await Appointment.destroy({
+      where: { id: req.params.id },
+    });
     if (app) {
       return res.json({ message: "Запись удалена", deleted: app });
     } else {
@@ -71,7 +73,14 @@ async function patchAppoint(req, res) {
   }
 }
 async function postAppoint(req, res) {
-  const app = await Appointment.create(req.body);
+  const appU = {
+    date: req.body.date,
+    status: req.body.status,
+    MasterId: req.body.MasterId,
+    FavorId: req.body.ServiceId,
+    userId: req.user.userId,
+  };
+  const app = await Appointment.create(appU);
   if (app) {
     return res.json(app);
   } else {

@@ -7,9 +7,29 @@ const Master = sequelize.define("Master", {
   experience: {
     type: DataTypes.INTEGER,
     validate: {
-      min: 0,
+      min: { args: [0], msg: "Некорректно указан опыт" },
+      checkMaxExp(value) {
+        if (value > 30) {
+          throw new Error("Опыт подозрительно огромен");
+        }
+      },
     },
     allowNull: false,
+  },
+  rating: {
+    type: DataTypes.DOUBLE,
+    validate: {
+      min: { args: [0], msg: "Рейтинг не может быть ниже нуля" },
+    },
+  },
+  qualification: {
+    type: DataTypes.STRING,
+  },
+  description: {
+    type: DataTypes.STRING,
+  },
+  price: {
+    type: DataTypes.DOUBLE,
   },
   phone: DataTypes.STRING,
   photo: {

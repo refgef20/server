@@ -7,13 +7,15 @@ import {
   patchProd,
   deleteProd,
 } from "../controllers/productsController.js";
+import Auth from "../middleware/authorization.js";
+import roleMiddleware from "../middleware/roleMiddleware.js";
 
 const router = Router();
 
 router.get("/:id", getProductsId);
 router.get("/", getProdustsQuery);
-router.post("/", postProduct);
-router.patch("/:id", patchProd);
-router.delete("/:id", deleteProd);
+router.post("/", Auth, roleMiddleware, postProduct);
+router.patch("/:id", Auth, roleMiddleware, patchProd);
+router.delete("/:id", Auth, roleMiddleware, deleteProd);
 
 export default router;

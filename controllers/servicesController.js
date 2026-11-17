@@ -18,7 +18,7 @@ async function getFavorsQuery(req, res) {
     sortby = "id",
     sortOrder = "ASC",
     search,
-    title,
+    category,
   } = req.query;
 
   if (search) {
@@ -26,8 +26,8 @@ async function getFavorsQuery(req, res) {
       title: { [Op.iLike]: `%${search}%` },
     };
   }
-  if (title) {
-    where.title = title;
+  if (category) {
+    where.category = category;
   }
 
   const offset = (page - 1) * limit;

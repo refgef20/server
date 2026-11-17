@@ -15,8 +15,8 @@ async function getProdustsQuery(req, res) {
   let where = {};
 
   const {
-    page = 1,
-    limit = 10,
+    page,
+    limit,
     sortby = "id",
     sortOrder = "ASC",
     search = "",
@@ -34,14 +34,22 @@ async function getProdustsQuery(req, res) {
     where.category = category;
   }
 
-  const offs = (page - 1) * limit;
-  const prod = await Products.findAndCountAll({
-    limit: Number(limit),
-    offset: Number(offs),
-    order: [[sortby, sortOrder]],
-    where: where,
-  });
-  return res.json(prod);
+  if (req.query.page && req.query.limit) {
+    const offs = (page - 1) * limit;
+    const prod = await Products.findAndCountAll({
+      limit: Number(limit),
+      offset: Number(offs),
+      order: [[sortby, sortOrder]],
+      where: where,
+    });
+    return res.json(prod);
+  } else {
+    const prod = await Products.findAndCountAll({
+      order: [[sortby, sortOrder]],
+      where: where,
+    });
+    return res.json(prod);
+  }
 }
 
 async function postProduct(req, res) {

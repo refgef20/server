@@ -6,13 +6,15 @@ import {
   postFavor,
   deleteFavor,
 } from "../controllers/servicesController.js";
+import Auth from "../middleware/authorization.js";
+import roleMiddleware from "../middleware/roleMiddleware.js";
 
 const routS = Router();
 
 routS.get("/:id", getFavorsId);
 routS.get("/", getFavorsQuery);
-routS.post("/", postFavor);
-routS.patch("/:id", patchFavor);
-routS.delete("/:id", deleteFavor);
+routS.post("/", Auth, roleMiddleware, postFavor);
+routS.patch("/:id", Auth, roleMiddleware, patchFavor);
+routS.delete("/:id", Auth, roleMiddleware, deleteFavor);
 
 export default routS;
