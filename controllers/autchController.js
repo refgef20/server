@@ -1,11 +1,10 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import { redis } from "../redis.js";
-import { json } from "body-parser";
+import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { SequelizeScopeError } from "sequelize";
 
-async function generateTokens(userId, role) {
+async function generateTokens(userId, role, previousToken) {
   const accesstToken = jwt.sign(
     { userId: userId, role: role },
     process.env.ACCESS_KEY,
@@ -18,11 +17,22 @@ async function generateTokens(userId, role) {
     process.env.REFRESH_KEY,
     {
       expiresIn: "7d",
+      jwtid: randomUUID(),
     },
   );
-  await redis.set(`refresh_token:${userId}`, refreshToken, {
-    EX: 7 * 24 * 60 * 60,
-  });
+  const key = `refresh_token:${userId}`;
+  const ttl = 7 * 24 * 60 * 60;
+  if (previousToken) {
+    // Не восстанавливаем сессию, если за время запроса пользователь вышел.
+    const updated = await redis.eval(
+      "if redis.call('GET', KEYS[1]) == ARGV[1] then " +
+        "return redis.call('SET', KEYS[1], ARGV[2], 'EX', ARGV[3]) end",
+      { keys: [key], arguments: [previousToken, refreshToken, String(ttl)] },
+    );
+    if (!updated) return null;
+  } else {
+    await redis.set(key, refreshToken, { EX: ttl });
+  }
   return { accesstToken, refreshToken };
 }
 
@@ -64,8 +74,9 @@ async function regystration(req, res) {
   }
 }
 async function login(req, res) {
-  console.log("Пришедшие данные:", req.body);
-  console.log("Значение телефона для поиска:", req.body.clientPhone);
+  if (typeof req.body?.clientPhone !== "string" || typeof req.body?.password !== "string") {
+    return res.status(400).json({ message: "Введите телефон и пароль" });
+  }
   const user = await User.findOne({
     where: {
       clientPhone: req.body.clientPhone,
@@ -90,51 +101,43 @@ async function login(req, res) {
   return res.status(201).json({ user: user, token: tokens.accesstToken });
 }
 async function updateToken(req, res) {
+  const refreshToken = req.cookies.refreshToken;
+  let token;
   try {
-    const token = jwt.verify(req.cookies.refreshToken, process.env.REFRESH_KEY);
-    const valtok = await redis.get(`refresh_token:${token.userId}`);
-    if (valtok) {
-      const tokens = await generateTokens(token.userId, token.role);
-      res.cookie("refreshToken", tokens.refreshToken, {
-        httpOnly: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
-      return res.status(201).json({ token: tokens.accesstToken });
-    } else {
-      return res
-        .status(401)
-        .json({ message: "refresh токен пользователя не найден" });
-    }
-  } catch (err) {
-    console.error(err, "токен не прошёл верификацию");
-    return;
+    token = jwt.verify(refreshToken, process.env.REFRESH_KEY);
+  } catch {
+    return res.status(401).json({ message: "Сессия завершена" });
   }
-}
-async function logOut(req, res) {
-  const deletedCount = await redis.del(`refresh_token:${req.user.userId}`);
-  if (deletedCount === 1) {
-    return res.status(201).json({ message: "Пользователь успешно вышел" });
-  } else {
-    return res.status(204);
-  }
-}
-async function loginWithOutPass(req, res) {
-  const user = await User.findOne({
-    where: {
-      clientPhone: req.body.clientPhone,
-    },
-  });
-
+  const user = await User.findByPk(token.userId);
   if (!user) {
     return res.status(401).json({ message: "Пользователь не найден" });
   }
-  const isValidName = await User.findOne({
-    where: {
-      clientName: req.body.clientName,
-    },
+  const tokens = await generateTokens(user.id, user.role, refreshToken);
+  if (!tokens) {
+    return res.status(401).json({ message: "Сессия завершена" });
+  }
+  res.cookie("refreshToken", tokens.refreshToken, {
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
-  if (!isValidName) {
-    return res.status(401).json({ message: "Неверное имя" });
+  return res.status(201).json({ token: tokens.accesstToken });
+}
+async function logOut(req, res) {
+  const deletedCount = await redis.del(`refresh_token:${req.user.userId}`);
+  res.clearCookie("refreshToken", { httpOnly: true });
+  if (deletedCount) {
+    return res.status(201).json({ message: "Пользователь успешно вышел" });
+  }
+  return res.sendStatus(204);
+}
+async function loginWithOutPass(req, res) {
+  const { clientPhone, clientName } = req.body || {};
+  if (typeof clientPhone !== "string" || typeof clientName !== "string" || !clientName.trim()) {
+    return res.status(400).json({ message: "Введите телефон и имя" });
+  }
+  const user = await User.findOne({ where: { clientPhone, clientName } });
+  if (!user) {
+    return res.status(401).json({ message: "Неверный телефон или имя" });
   }
   const tokens = await generateTokens(user.id, user.role);
   res.cookie("refreshToken", tokens.refreshToken, {
