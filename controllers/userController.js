@@ -85,6 +85,7 @@ async function getUsersOrder(req, res) {
 }
 
 async function changePassword(req, res) {
+  console.log("ВЕСЬ REQ.BODY:", req.body);
   const user = await User.findOne({ where: { id: req.user.userId } });
   const passwordIsValid = await bcrypt.compare(req.body.oldPass, user.password);
   if (!passwordIsValid) {

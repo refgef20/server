@@ -8,6 +8,7 @@ async function Auth(req, res, next) {
     }
     const token = valAuth.split(" ")[1];
 
+    console.log(token);
     const payload = jwt.verify(token, process.env.ACCESS_KEY);
     if (!payload) {
       return res.status(401).json({ message: "Токен не прошёл верификацию" });
