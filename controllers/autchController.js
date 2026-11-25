@@ -64,6 +64,8 @@ async function regystration(req, res) {
   }
 }
 async function login(req, res) {
+  console.log("Пришедшие данные:", req.body);
+  console.log("Значение телефона для поиска:", req.body.clientPhone);
   const user = await User.findOne({
     where: {
       clientPhone: req.body.clientPhone,
@@ -116,4 +118,29 @@ async function logOut(req, res) {
     return res.status(204);
   }
 }
-export { regystration, login, logOut, updateToken };
+async function loginWithOutPass(req, res) {
+  const user = await User.findOne({
+    where: {
+      clientPhone: req.body.clientPhone,
+    },
+  });
+
+  if (!user) {
+    return res.status(401).json({ message: "Пользователь не найден" });
+  }
+  const isValidName = await User.findOne({
+    where: {
+      clientName: req.body.clientName,
+    },
+  });
+  if (!isValidName) {
+    return res.status(401).json({ message: "Неверное имя" });
+  }
+  const tokens = await generateTokens(user.id, user.role);
+  res.cookie("refreshToken", tokens.refreshToken, {
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+  return res.status(201).json({ user: user, token: tokens.accesstToken });
+}
+export { regystration, login, logOut, updateToken, loginWithOutPass };

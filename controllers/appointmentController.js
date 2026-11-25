@@ -12,14 +12,7 @@ async function getAppointmentId(req, res) {
 
 async function getAppointmentQuery(req, res) {
   let where = {};
-  const {
-    page = 1,
-    limit = 10,
-    sortby = "id",
-    sortOrder = "ASC",
-    search = "",
-    status,
-  } = req.query;
+  const { sortby = "id", sortOrder = "ASC", search = "", status } = req.query;
 
   if (status) {
     where.status = { [Op.iLike]: `%${status}%` };
@@ -31,11 +24,7 @@ async function getAppointmentQuery(req, res) {
     ];
   }
 
-  const offset = (page - 1) * limit;
-
   const appoint = await Appointment.findAndCountAll({
-    limit: limit,
-    offset: offset,
     order: [[sortby, sortOrder]],
     where: where,
   });
